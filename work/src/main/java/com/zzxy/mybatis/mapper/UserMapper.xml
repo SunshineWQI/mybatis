@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zzxy.mybatis.mapper.UserMapper">
+    <!--配置二级缓存, 默认是perpetualCache-->
+    <!--<cache type="org.mybatis.caches.ehcache.EhcacheCache"/>-->
+    <!--二级缓存默认在save,update,delete commit后清除缓存
+    通过flushCache的配置, 可以在save commit后不清除缓存-->
+    <insert id="save" parameterType="user" flushCache="false">
+         insert into user(username,birthday,sex,address) values (#{username}, #{birthday},#{sex}, #{address})
+    </insert>
+
+    <!--通过useCache="false"指定方法不适用二级缓存-->
+    <select id="findUserById" parameterType="int" resultType="user" >
+        select * from user where  id = #{id}
+    </select>
+
+    <!--传递VO参数-->
+    <select id="findUserListByVO" parameterType="userQueryVO" resultType="user">
+        SELECT u.* FROM user u, orders o WHERE u.username like #{username} AND o.number = #{orders.number}
+    </select>
+
+    <select id="findUserListByMap" parameterType="hashmap" resultType="user">
+        SELECT u.* FROM user u where u.sex=#{sex} and u.username = #{username}
+    </select>
+
+    <select id="findUserCount" parameterType="userQueryVO" resultType="int">
+        select count(*) from user where sex=#{user.sex}
+    </select>
+
+    <!--resultMap的讲解-->
+    <resultMap id="userResultMap" type="user">
+        <id property="id" column="id_"/>
+        <result property="username" column="username_"/>
+        <result property="birthday" column="birthday_"/>
+        <result property="sex" column="sex_"/>
+        <result property="address" column="address_"/>
+    </resultMap>
+    <select id="findUserByIdResultMap" parameterType="int" resultMap="userResultMap">
+        SELECT
+            id id_,
+            username username_,
+            birthday birthday_,
+            sex sex_,
+            address address_
+            FROM user where id = #{id}
+    </select>
+
+    <!--动态sql的讲解-->
+    <!--添加sql片段-->
+    <sql id="dynamic_sql_field">
+        <if test="user != null">
+            <if test="user.sex != null and user.sex != ''">
+                sex = #{user.sex}
+            </if>
+            <if test="user.username != null and user.username!= ''">
+                and username like '%${user.username}%'
+            </if>
+        </if>
+    </sql>
+    <!--foreach: 遍历标签-->
+    <!--collection:集合参数的名字-->
+    <!--item:每次遍历出来的对象-->
+    <!--open:开始遍历时拼接的串-->
+    <!--close:结束遍历时拼接的串-->
+    <!--separator:遍历出的对象之间的间隔-->
+    <select id="findUserList" parameterType="userQueryVO" resultType="user">
+        SELECT *
+        FROM user
+        <where>
+            <!--引入sql片段-->
+            <!--<include refid="dynamic_sql_field"/>-->
+            <if test="ids != null and ids.size > 0">
+                <foreach collection="ids" item="id" open="id in (" close=")" separator=",">
+                    ${id}
+                </foreach>
+            </if>
+        </where>
+
+    </select>
+
+    <!--测试集合参数的遍历-->
+    <select id="findUserByList" parameterType="list" resultType="user">
+        select * from user
+        <where>
+            <if test="list !=null and list.size > 0">
+                <foreach collection="list" item="id" open="id in (" close=")" separator=",">
+                    #{id}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <!--多对多-->
+    <resultMap id="userRstMap" type="user">
+        <id column="id" property="id"/>
+        <result column="username" property="username"/>
+        <result column="address" property="address"/>
+
+        <!--User的orderList配置-->
+        <collection property="orderList" ofType="order">
+            <id column="order_id" property="id"/>
+            <result column="number" property="number"/>
+            <result column="createtime" property="createtime"/>
+            <result column="note" property="note"/>
+
+            <!--orderList的orderDetail配置-->
+            <collection property="orderDetails" ofType="orderDetail">
+                <id column="detail_id" property="id"/>
+                <result column="item_id" property="itemsId"/>
+                <result column="item_num" property="itemsNum"/>
+
+                <!--orderDetail的item配置-->
+                <association property="item" javaType="item">
+                    <result column="name" property="name"/>
+                    <result column="price" property="price"/>
+                    <result column="detail" property="detail"/>
+                </association>
+            </collection>
+        </collection>
+    </resultMap>
+    <select id="findUserAndItemByRstMap" resultMap="userRstMap">
+        SELECT
+            u.id,
+            u.username,
+            u.address,
+            o.id order_id,
+            o.number,
+            o.createtime,
+            o.note,
+            od.id detail_id,
+            od.item_id,
+            od.item_num,
+            it.name,
+            it.price,
+            it.detail
+        FROM
+            `user` u,
+            `order` o,
+            orderdetail od,
+            item it
+        WHERE
+            o.user_id = u.id
+           AND o.id = od.order_id
+           AND od.item_id = it.id;
+
+    </select>
+</mapper>

@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zzxy.mybatis.mapper.OrderMapper">
+    <sql id="select_order">
+        o.id,
+        o.number,
+        o.createtime,
+        o.note,
+    </sql>
+    <sql id="select_user">
+        u.username,
+        u.address
+    </sql>
+
+    <!--SELECT o.id,o.number,o.createtime,o.note,u.username,u.address
+    FROM `order` o, `user` u
+    WHERE o.user_id = u.id AND o.id = #{id}-->
+
+    <!--对象扩展实现一对一-->
+    <select id="findOrderUser" parameterType="int" resultType="orderExt">
+        select
+        <include refid="select_order"/>
+        <include refid="select_user"/>
+        FROM `order` o, `user` u
+        WHERE o.user_id = u.id AND o.id = #{id}
+    </select>
+
+    <!--通过resultMap实现一对一-->
+    <resultMap id="OrderRstMap" type="order">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="createtime" property="createtime"/>
+        <result column="note" property="note"/>
+        <!--用于关联内部对象-->
+        <association property="user" javaType="user">
+            <result property="username" column="username"/>
+            <result property="address" column="address"/>
+        </association>
+    </resultMap>
+
+    <select id="findOrderByRstMap" parameterType="int" resultMap="OrderRstMap">
+        select
+        <include refid="select_order"/>
+        <include refid="select_user"/>
+        FROM `order` o, `user` u
+        WHERE o.user_id = u.id AND o.id = #{id}
+    </select>
+
+
+    <!--一对多-->
+    <resultMap id="OrderOne2MoreMap" type="order">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="createtime" property="createtime"/>
+        <result column="note" property="note"/>
+        <!--用于关联内部对象-->
+        <association property="user" javaType="user">
+            <result property="username" column="username"/>
+            <result property="address" column="address"/>
+        </association>
+        <!--一对多相当于模型中有List-->
+        <collection property="orderDetail" javaType="orderDetail">
+            <id column="detail_id" property="id"/>
+            <result column="item_id" property="itemsId"/>
+            <result column="item_num" property="itemsNum"/>
+        </collection>
+    </resultMap>
+    <select id="findOrderByRstMapOne2More" parameterType="int" resultMap="OrderOne2MoreMap">
+    SELECT
+        o.id,
+        o.user_id,
+        o.createtime,
+        o.note,
+        u.username,
+        u.address,
+        od.id detail_id,
+        od.item_id,
+        od.item_num
+    FROM
+        `order` o,
+        `user` u,
+        orderdetail od
+    WHERE
+        o.user_id = u.id
+      AND o.id = od.order_id
+      AND o.id = 3
+    </select>
+
+    <!--懒加载-->
+    <resultMap id="selectOrderUserLazyRstMao" type="order">
+        <id column="id" property="id"/>
+        <result column="number" property="number"/>
+        <result column="user_id" property="userId"/>
+        <result column="createtime" property="createtime"/>
+        <result column="note" property="note"/>
+        <association property="user" select="com.zzxy.mybatis.mapper.UserMapper.findUserById" column="user_id"/>
+    </resultMap>
+    <select id="findOrderUserByLazyloading" resultMap="selectOrderUserLazyRstMao">
+            select * from `order`
+    </select>
+</mapper>

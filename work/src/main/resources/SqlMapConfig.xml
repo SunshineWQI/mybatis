@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+    <properties resource="db.properties"/>
+    <settings>
+        <!--开启懒加载-->
+        <setting name="lazyLoadingEnabled" value="true"/>
+        <!--开启二级缓存-->
+        <setting name="cacheEnabled" value="true"/>
+    </settings>
+    <!--配置别名-->
+    <typeAliases>
+        <!--单个定义别名-->
+        <!--<typeAlias type="com.zzxy.mybatis.entity.User" alias="user"/>-->
+
+        <!--批量配置别名,别名对应的就是包下的类名,大小写都可以-->
+        <package name="com.zzxy.mybatis.entity"/>
+        <package name="com.zzxy.mybatis.vo"/>
+        <package name="com.zzxy.mybatis.mapper"/>
+    </typeAliases>
+    <!-- 配置mybatis的环境信息 -->
+    <environments default="development">
+        <environment id="development">
+            <!-- 配置JDBC事务控制，由mybatis进行管理 -->
+            <transactionManager type="JDBC"></transactionManager>
+            <!-- 配置数据源，采用dbcp连接池 -->
+            <dataSource type="POOLED">
+                <!--使用${}可以引用已经加载的Java配置文件中的信息-->
+                <property name="driver" value="${driverclass}"/>
+                <property name="url" value="${url}"/>
+                <property name="username" value="${username}"/>
+                <property name="password" value="${password}"/>
+            </dataSource>
+        </environment>
+    </environments>
+    <mappers>
+        <!--<mapper resource="com/zzxy/mybatis/sqlmap/User.xml"/>-->
+        <!--<mapper resource="com/zzxy/mybatis/mapper/UserMapper.xml"/>-->
+        <!--<mapper class="com.zzxy.mybatis.mapper.UserMapper"/>-->
+        <package name="com.zzxy.mybatis.mapper"/>
+    </mappers>
+</configuration>
